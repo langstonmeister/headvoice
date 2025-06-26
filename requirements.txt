@@ -1,19 +1,10 @@
-# === Core STT and TTS ===
-pvporcupine         # Wake word detection
-sounddevice         # Optional audio recording/playing
-python-dotenv       # Environment variable support
-
-# === Optional for Whisper-based STT ===
-# whisper.cpp is run via subprocess, no Python lib needed here
-
-# === Optional future support ===
-requests            # For web fallback or Wikipedia API
-beautifulsoup4      # For web scraping if needed
-lxml                # HTML parsing
-openai              # For API fallback (if desired)
-
-# === Local LLM support (optional, for future) ===
-# You may eventually call llama.cpp via subprocess
-
-# === Dev / cross-platform helpers ===
-platformdirs        # Optional: cleaner cross-OS path mgmt
+pvporcupine
+pyaudio
+sox
+sounddevice
+python-dotenv
+requests
+beautifulsoup4
+lxml
+openai
+platformdirs
