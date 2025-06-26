@@ -1,10 +1,7 @@
 import subprocess
 import os
-<<<<<<< klj25q-codex/modify-mic_listener.py-to-read-whisper_path
 import argparse
 from pathlib import Path
-from config import AUDIO_FILE, AUDIO_DEVICE_NAME, CHIME_FILE, RECORD_DURATION
-=======
 import shutil
 import platform
 from config import (
@@ -15,7 +12,6 @@ from config import (
     WHISPER_MODEL,
     IS_MAC,
 )
->>>>>>> main
 
 
 
