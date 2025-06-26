@@ -27,6 +27,9 @@ pip install pvporcupine pyaudio
 
 Test the system on macOS before moving to your Pi.
 
+On Linux you will need an audio player such as `aplay` (from `alsa-utils`) or
+`sox` for the chime sound.
+
 ## 🐧 Setup (Raspberry Pi)
 
 Coming soon — instructions for installing on Raspberry Pi Zero 2 W.
