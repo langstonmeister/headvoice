@@ -1,14 +1,39 @@
 import subprocess
 import os
-from config import AUDIO_FILE, AUDIO_DEVICE_NAME, CHIME_FILE, RECORD_DURATION, WHISPER_MODEL
+<<<<<<< klj25q-codex/modify-mic_listener.py-to-read-whisper_path
+import argparse
+from pathlib import Path
+from config import AUDIO_FILE, AUDIO_DEVICE_NAME, CHIME_FILE, RECORD_DURATION
+=======
+import shutil
+import platform
+from config import (
+    AUDIO_FILE,
+    AUDIO_DEVICE_NAME,
+    CHIME_FILE,
+    RECORD_DURATION,
+    WHISPER_MODEL,
+    IS_MAC,
+)
+>>>>>>> main
 
 
 
-AUDIO_FILE = "data/input.wav"
-CHIME_FILE = "data/processing.wav"
-WHISPER_PATH = "/Users/yourname/dev/whisper.cpp"
-MODEL_PATH = f"{WHISPER_PATH}/models/ggml-tiny.en.bin"
-WHISPER_EXEC = f"{WHISPER_PATH}/main"
+# Default path to the whisper.cpp directory (relative to project root)
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_WHISPER_PATH = BASE_DIR / "whisper.cpp"
+
+# Resolve whisper path from command line or environment variable
+def _resolve_whisper_path() -> Path:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--whisper-path", dest="whisper_path")
+    args, _ = parser.parse_known_args()
+    path = args.whisper_path or os.getenv("WHISPER_PATH")
+    return Path(path) if path else DEFAULT_WHISPER_PATH
+
+WHISPER_PATH = _resolve_whisper_path()
+MODEL_PATH = str(WHISPER_PATH / "models" / "ggml-tiny.en.bin")
+WHISPER_EXEC = str(WHISPER_PATH / "main")
 
 def record_audio(duration=RECORD_DURATION):
     print("🎤 Listening...")
@@ -18,10 +43,21 @@ def record_audio(duration=RECORD_DURATION):
     ])
 
 def play_processing_chime():
-    if os.path.exists(CHIME_FILE):
-        subprocess.run(["afplay", CHIME_FILE])
-    else:
+    """Play a short chime to indicate the recording phase."""
+    if not os.path.exists(CHIME_FILE):
         print("🔈 (No chime)")
+        return
+
+    # Choose a player based on the OS and available commands
+    if IS_MAC:
+        player = "afplay"
+    else:
+        player = shutil.which("aplay") or shutil.which("play")
+
+    if player:
+        subprocess.run([player, str(CHIME_FILE)])
+    else:
+        print("🔈 (No audio player found)")
 
 def transcribe_audio():
     print("🔍 Transcribing...")
