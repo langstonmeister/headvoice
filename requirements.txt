@@ -11,6 +11,8 @@ requests            # For web fallback or Wikipedia API
 beautifulsoup4      # For web scraping if needed
 lxml                # HTML parsing
 openai              # For API fallback (if desired)
+numpy              # Optional: for audio processing or data handling
+whisper            # Optional: for Whisper-based STT
 
 # === Local LLM support (optional, for future) ===
 # You may eventually call llama.cpp via subprocess
