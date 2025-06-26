@@ -3,6 +3,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import shutil
+import platform
 from config import (
     AUDIO_FILE,
     AUDIO_DEVICE_NAME,
@@ -12,6 +14,8 @@ from config import (
     BASE_DIR,
 )
 
+    IS_MAC,
+)
 
 _DEFAULT_WHISPER_PATH = BASE_DIR / "whisper.cpp"
 
@@ -50,7 +54,21 @@ def play_processing_chime():
     if os.path.exists(CHIME_FILE):
         subprocess.run(["afplay", str(CHIME_FILE)])
     else:
+    """Play a short chime to indicate the recording phase."""
+    if not os.path.exists(CHIME_FILE):
         print("🔈 (No chime)")
+        return
+
+    # Choose a player based on the OS and available commands
+    if IS_MAC:
+        player = "afplay"
+    else:
+        player = shutil.which("aplay") or shutil.which("play")
+
+    if player:
+        subprocess.run([player, str(CHIME_FILE)])
+    else:
+        print("🔈 (No audio player found)")
 
 def transcribe_audio():
     print("🔍 Transcribing...")
