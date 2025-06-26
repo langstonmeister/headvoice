@@ -31,6 +31,29 @@ Test the system on macOS before moving to your Pi.
 On Linux you will need an audio player such as `aplay` (from `alsa-utils`) or
 `sox` for the chime sound.
 
+## 🔈 Install `espeak-ng`
+
+Add text-to-speech on Linux with this helper function:
+
+```python
+import subprocess
+import shutil
+
+def install_espeak_ng():
+    print("🔧 Checking for espeak-ng...")
+    if shutil.which("espeak-ng") is None:
+        print("📦 Installing espeak-ng...")
+        subprocess.run(["sudo", "apt", "update"])
+        subprocess.run(["sudo", "apt", "install", "-y", "espeak-ng"])
+    else:
+        print("✅ espeak-ng is already installed.")
+
+if __name__ == "__main__":
+    install_espeak_ng()
+```
+
+On macOS use the built-in `say` command; no extra packages are needed.
+
 ## 🐧 Setup (Raspberry Pi)
 
 Coming soon — instructions for installing on Raspberry Pi Zero 2 W.
