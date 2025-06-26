@@ -1,5 +1,5 @@
 pvporcupine
-pyaudio
+# pyaudio
 sox
 sounddevice
 python-dotenv
