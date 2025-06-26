@@ -1,6 +1,7 @@
 
 import subprocess
 from config import MODEL_DIR
+from audio_feedback import play_processing_sound
 
 LLAMA_CPP_PATH = "llm/main"  # path to your compiled llama.cpp binary
 LLM_MODEL_FILE = MODEL_DIR / "qwen2.5-0.5b-q4_k_m.gguf"
@@ -13,6 +14,7 @@ def build_qwen_prompt(user_input: str, system_prompt: str = "You are Tavi, a fri
 # === LLM Call ===
 def query_llm(prompt: tuple[str, str], max_tokens: int = DEFAULT_MAX_TOKENS) -> str:
     print("🤖 Thinking...")
+    play_processing_sound()  # Play processing sound to indicate LLM is thinking
     try:
         user_prompt, system_prompt = prompt
         result = subprocess.run([
