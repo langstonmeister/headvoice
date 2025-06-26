@@ -1,5 +1,8 @@
 import subprocess
 import os
+from config import AUDIO_FILE, AUDIO_DEVICE_NAME, CHIME_FILE, RECORD_DURATION, WHISPER_MODEL
+
+
 
 AUDIO_FILE = "data/input.wav"
 CHIME_FILE = "data/processing.wav"
@@ -7,12 +10,12 @@ WHISPER_PATH = "/Users/yourname/dev/whisper.cpp"
 MODEL_PATH = f"{WHISPER_PATH}/models/ggml-tiny.en.bin"
 WHISPER_EXEC = f"{WHISPER_PATH}/main"
 
-def record_audio(duration=6):
-    print("🎤 Recording for", duration, "seconds...")
+def record_audio(duration=RECORD_DURATION):
+    print("🎤 Listening...")
     subprocess.run([
-        "sox", "-d", AUDIO_FILE, "trim", "0", str(duration)
+        "arecord", "-D", AUDIO_DEVICE_NAME, "-f", "cd", "-t", "wav",
+        "-d", str(duration), "-r", "16000", AUDIO_FILE
     ])
-    print("🎙️ Recording complete.")
 
 def play_processing_chime():
     if os.path.exists(CHIME_FILE):
