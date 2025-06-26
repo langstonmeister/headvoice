@@ -1,6 +1,5 @@
 # === Core STT and TTS ===
 pvporcupine         # Wake word detection
-pyaudio             # Microphone access
 sounddevice         # Optional audio recording/playing
 python-dotenv       # Environment variable support
 
