@@ -57,7 +57,7 @@ tavi/
 
 ## 💬 License
 
-MIT — free to use, modify, or build on.
+This project is licensed under the [MIT License](LICENSE).
 
 ```
 
