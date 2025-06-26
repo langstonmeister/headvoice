@@ -1,6 +1,6 @@
 ## 📄 `README.md` (Starter Template)
 
-````markdown
+```markdown
 # 🗣️ Tavi — A Minimal Voice Assistant for Raspberry Pi Zero 2 W
 
 Tavi is a modular, offline-first voice assistant designed to run on low-power devices like the Raspberry Pi Zero 2 W. It listens for a custom wake word ("Tavi"), records your voice, processes it with a local speech-to-text engine (Whisper), optionally queries a local LLM or offline Wikipedia (Kiwix), and speaks back the answer using text-to-speech.
@@ -20,12 +20,16 @@ Tavi is a modular, offline-first voice assistant designed to run on low-power de
 - `followup_prompter.py` – checks for previously unanswered questions
 
 ## 🚀 Getting Started (macOS)
-```bash
+~~~bash
 brew install portaudio ffmpeg
 pip install pvporcupine pyaudio
-````
+~~~
+```
 
 Test the system on macOS before moving to your Pi.
+
+On Linux you will need an audio player such as `aplay` (from `alsa-utils`) or
+`sox` for the chime sound.
 
 ## 🐧 Setup (Raspberry Pi)
 
@@ -56,15 +60,15 @@ tavi/
 
 ## 💬 License
 
-MIT — free to use, modify, or build on.
+This project is licensed under the [MIT License](LICENSE).
 
-````
+```
 
 ---
 
 ## 🧠 `main.py` — Voice Loop Controller
 
-```python
+~~~python
 from wake_word_listener import WakeWordDetector
 from mic_listener import record_audio, transcribe_audio, play_processing_chime
 from voice_output import speak
@@ -95,7 +99,8 @@ def main():
 
 if __name__ == "__main__":
     main()
-````
+~~~
+```
 
 ---
 
