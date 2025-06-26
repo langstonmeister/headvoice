@@ -1,34 +1,65 @@
-import subprocess
+import argparse
 import os
-from config import AUDIO_FILE, AUDIO_DEVICE_NAME, CHIME_FILE, RECORD_DURATION, WHISPER_MODEL
+import subprocess
+from pathlib import Path
+
+from config import (
+    AUDIO_FILE,
+    AUDIO_DEVICE_NAME,
+    CHIME_FILE,
+    RECORD_DURATION,
+    WHISPER_MODEL,
+    BASE_DIR,
+)
 
 
+_DEFAULT_WHISPER_PATH = BASE_DIR / "whisper.cpp"
 
-AUDIO_FILE = "data/input.wav"
-CHIME_FILE = "data/processing.wav"
-WHISPER_PATH = "/Users/yourname/dev/whisper.cpp"
-MODEL_PATH = f"{WHISPER_PATH}/models/ggml-tiny.en.bin"
-WHISPER_EXEC = f"{WHISPER_PATH}/main"
+_parser = argparse.ArgumentParser(add_help=False)
+_parser.add_argument(
+    "--whisper-path",
+    dest="whisper_path",
+    help="Path to the whisper.cpp build directory",
+)
+_args, _ = _parser.parse_known_args()
+
+WHISPER_PATH = Path(
+    _args.whisper_path or os.getenv("WHISPER_PATH") or _DEFAULT_WHISPER_PATH
+)
+WHISPER_EXEC = WHISPER_PATH / "main"
+MODEL_PATH = WHISPER_MODEL
 
 def record_audio(duration=RECORD_DURATION):
     print("🎤 Listening...")
     subprocess.run([
-        "arecord", "-D", AUDIO_DEVICE_NAME, "-f", "cd", "-t", "wav",
-        "-d", str(duration), "-r", "16000", AUDIO_FILE
+        "arecord",
+        "-D",
+        AUDIO_DEVICE_NAME,
+        "-f",
+        "cd",
+        "-t",
+        "wav",
+        "-d",
+        str(duration),
+        "-r",
+        "16000",
+        str(AUDIO_FILE),
     ])
 
 def play_processing_chime():
     if os.path.exists(CHIME_FILE):
-        subprocess.run(["afplay", CHIME_FILE])
+        subprocess.run(["afplay", str(CHIME_FILE)])
     else:
         print("🔈 (No chime)")
 
 def transcribe_audio():
     print("🔍 Transcribing...")
     result = subprocess.run([
-        WHISPER_EXEC,
-        "-m", MODEL_PATH,
-        "-f", AUDIO_FILE,
+        str(WHISPER_EXEC),
+        "-m",
+        str(MODEL_PATH),
+        "-f",
+        str(AUDIO_FILE),
         "-nt"
     ], capture_output=True, text=True)
 
