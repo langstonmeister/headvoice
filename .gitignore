@@ -5,8 +5,14 @@ __pycache__/
 *.wav
 *.bin
 *.ppn
-data/
-models/
+
+# Keep directories but ignore their contents by default
+data/*
+!data/README.md
+models/*
+!models/README.md
+wake_words/*
+!wake_words/README.md
 
 # C extensions
 *.so

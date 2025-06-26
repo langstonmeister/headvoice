@@ -1,8 +1,21 @@
 import subprocess
 import os
+<<<<<<< klj25q-codex/modify-mic_listener.py-to-read-whisper_path
 import argparse
 from pathlib import Path
 from config import AUDIO_FILE, AUDIO_DEVICE_NAME, CHIME_FILE, RECORD_DURATION
+=======
+import shutil
+import platform
+from config import (
+    AUDIO_FILE,
+    AUDIO_DEVICE_NAME,
+    CHIME_FILE,
+    RECORD_DURATION,
+    WHISPER_MODEL,
+    IS_MAC,
+)
+>>>>>>> main
 
 
 
@@ -30,10 +43,21 @@ def record_audio(duration=RECORD_DURATION):
     ])
 
 def play_processing_chime():
-    if os.path.exists(CHIME_FILE):
-        subprocess.run(["afplay", CHIME_FILE])
-    else:
+    """Play a short chime to indicate the recording phase."""
+    if not os.path.exists(CHIME_FILE):
         print("🔈 (No chime)")
+        return
+
+    # Choose a player based on the OS and available commands
+    if IS_MAC:
+        player = "afplay"
+    else:
+        player = shutil.which("aplay") or shutil.which("play")
+
+    if player:
+        subprocess.run([player, str(CHIME_FILE)])
+    else:
+        print("🔈 (No audio player found)")
 
 def transcribe_audio():
     print("🔍 Transcribing...")
