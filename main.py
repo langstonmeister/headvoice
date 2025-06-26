@@ -17,7 +17,7 @@ def main():
             if text:
                 speak(f"You said: {text}")
             else:
-                speak("Sorry, I didn’t catch that.")
+                speak("Sorry, I didn't catch that.")
 
     except KeyboardInterrupt:
         print("👋 Exiting...")
