@@ -1,4 +1,3 @@
-pvporcupine
 # pyaudio
 sox
 sounddevice
@@ -7,7 +6,6 @@ requests
 beautifulsoup4
 lxml
 openai
-platformdirs
 # === Core STT and TTS ===
 pvporcupine         # Wake word detection
 sounddevice         # Optional audio recording/playing
