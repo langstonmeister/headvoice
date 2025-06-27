@@ -20,7 +20,7 @@ WAKE_WORD_DIR = BASE_DIR / "wake_words"
 AUDIO_FILE = DATA_DIR / "input.wav"
 CHIME_FILE = DATA_DIR / "processing.wav"
 WHISPER_MODEL = MODEL_DIR / "ggml-tiny.en.bin"
-WAKE_WORD_FILE = WAKE_WORD_DIR / "tavi_raspberry-pi.ppn"
+WAKE_WORD_FILE = WAKE_WORD_DIR / "Hey-tavi_en_mac_v3_0_0.ppn"
 
 # ==== DEFAULTS ====
 RECORD_DURATION = 6  # seconds

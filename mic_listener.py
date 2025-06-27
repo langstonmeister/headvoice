@@ -13,8 +13,6 @@ from config import (
     IS_MAC,
 )
 
-
-
 # Default path to the whisper.cpp directory (relative to project root)
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_WHISPER_PATH = BASE_DIR / "whisper.cpp"
