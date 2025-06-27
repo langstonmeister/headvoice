@@ -1,6 +1,6 @@
 from wake_word_listener import WakeWordDetector
 from mic_listener import record_audio, transcribe_audio, play_processing_chime
-from voice_output import speak
+from voice_output import generate_audio_from_text
 
 WAKE_WORD_PATH = "wake_words/tavi_raspberry-pi.ppn"
 
@@ -15,9 +15,9 @@ def main():
             text = transcribe_audio()
 
             if text:
-                speak(f"You said: {text}")
+                generate_audio_from_text(f"You said: {text}")
             else:
-                speak("Sorry, I didn't catch that.")
+                generate_audio_from_text("Sorry, I didn't catch that.")
 
     except KeyboardInterrupt:
         print("👋 Exiting...")
