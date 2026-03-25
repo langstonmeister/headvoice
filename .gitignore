@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.wav
 *.bin
-*.ppn
 
 # Keep directories but ignore their contents by default
 data/*
@@ -13,6 +12,7 @@ models/*
 !models/README.md
 wake_words/*
 !wake_words/README.md
+!wake_words/*.ppn
 
 # C extensions
 *.so
