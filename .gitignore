@@ -12,7 +12,7 @@ models/*
 !models/README.md
 wake_words/*
 !wake_words/README.md
-!wake_words/*.ppn
+!wake_words/*.onnx
 
 # C extensions
 *.so

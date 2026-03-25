@@ -2,10 +2,10 @@ from wake_word_listener import WakeWordDetector
 from mic_listener import record_audio, transcribe_audio, play_processing_chime
 from voice_output import generate_audio_from_text
 from llm_interface import build_qwen_prompt, query_llm
-from config import WAKE_WORD_FILE
+
 
 def main():
-    detector = WakeWordDetector(str(WAKE_WORD_FILE))
+    detector = WakeWordDetector()
 
     try:
         while True:
@@ -25,6 +25,7 @@ def main():
         print("👋 Exiting...")
     finally:
         detector.close()
+
 
 if __name__ == "__main__":
     main()

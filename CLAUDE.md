@@ -54,15 +54,14 @@ Key constants:
 - `AUDIO_FILE` → `data/input.wav`
 - `CHIME_FILE` → `data/processing.wav`
 - `WHISPER_MODEL` → `models/ggml-tiny.en.bin`
-- `WAKE_WORD_FILE` → `wake_words/Hey-tavi_en_mac_v3_0_0.ppn`
 - `RECORD_DURATION` → 6 seconds
 - `IS_MAC`, `IS_PI` — platform booleans
 - `AUDIO_DEVICE_NAME` — platform-appropriate audio device
 
-`PORCUPINE_API_KEY` is required and raises `ValueError` on startup if missing.
+No required API keys — the app runs fully offline with no accounts needed.
 
 ### `wake_word_listener.py`
-Uses the `pvporcupine` library. Opens a PyAudio stream at Porcupine's native sample rate, processes 16-bit PCM frames, and blocks until the keyword is detected. The wake word is "Hey Tavi" and requires a `.ppn` model file from the Picovoice Console.
+Uses `openwakeword` with a `sounddevice` input stream. Processes 1280-sample (~80ms) chunks of 16kHz PCM audio and returns when any model score exceeds the threshold (default 0.5). By default uses the built-in `hey_jarvis` pre-trained model. Pass a path to a custom `.onnx` model file to `WakeWordDetector(model_path=...)` to use a trained "Hey Tavi" model instead. No API key required.
 
 ### `mic_listener.py`
 - Records audio to `data/input.wav`:
@@ -106,18 +105,15 @@ OPENAI_API_KEY=                   # Optional — future web fallback
 ### Installation
 
 ```bash
-# macOS prerequisites
-brew install portaudio ffmpeg
-
-# Linux prerequisites
-sudo apt install alsa-utils sox espeak-ng
-
-# Python dependencies
-pip install -r requirements.txt
-
-# Download models and set up directories (one time)
+# Clone and run setup (handles brew deps, whisper.cpp build, model downloads)
 python setup_env.py
 ```
+
+`setup_env.py` will:
+- Install `portaudio` via Homebrew (macOS)
+- Install all Python packages
+- Clone and compile `whisper.cpp` with Metal support
+- Download the Whisper model, Qwen GGUF model, and ZIM file
 
 ### Running
 
@@ -131,7 +127,7 @@ python main.py
 
 **Current phase:** Develop and test on macOS (M3). Port to Raspberry Pi Zero 2 W once stable.
 
-The `WAKE_WORD_FILE` in `config.py` points to the macOS `.ppn` model. When moving to Pi, update `config.py` to point to the appropriate `.ppn` for arm Linux. All other platform switching is handled automatically via `IS_MAC` / `IS_PI`.
+Wake word detection uses `openwakeword` with the built-in `hey_jarvis` model by default — no platform-specific model files needed. To switch to a custom "Hey Tavi" model, train one with openWakeWord, place the `.onnx` file in `wake_words/`, and pass its path to `WakeWordDetector(model_path=...)`. All other platform switching is handled automatically via `IS_MAC` / `IS_PI`.
 
 ## Platform Conventions
 
@@ -165,14 +161,13 @@ Key packages from `requirements.txt`:
 
 | Package | Purpose |
 |---|---|
-| `pvporcupine` | Wake word detection |
-| `pyaudio` | Audio device access |
-| `sounddevice` / `soundfile` | Audio recording and playback |
+| `openwakeword` | Wake word detection (open source, no API key) |
+| `sounddevice` / `soundfile` | Audio recording and wake word stream |
+| `numpy` | Audio buffer handling |
 | `dimits` | Text-to-speech synthesis |
 | `python-dotenv` | `.env` file loading |
 | `openai` | Optional OpenAI API fallback (future) |
 | `requests`, `beautifulsoup4`, `lxml` | Web/HTML utilities (future) |
-| `numpy` | Numerical operations |
 
 External binaries (not Python packages):
 - `whisper.cpp` — compiled separately, path set via `WHISPER_PATH`

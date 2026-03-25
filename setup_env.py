@@ -25,8 +25,6 @@ QWEN_MODEL_FILE = MODELS / "qwen2.5-0.5b-q4_k_m.gguf"
 ZIM_URL = "https://download.kiwix.org/zim/devdocs/devdocs_en_ansible_2025-01.zim"
 ZIM_DEST = ZIM / Path(ZIM_URL).name
 
-DEFAULT_WAKE_WORD_FILE = WAKE_WORDS / "Hey-tavi_en_mac_v3_0_0.ppn"
-
 IS_MAC = sys.platform == "darwin"
 
 # === Helpers ===
@@ -79,61 +77,14 @@ def build_whisper_cpp():
     run(f"make -C '{WHISPER_DIR}' -j4")
     print("✅ whisper.cpp compiled.")
 
-def prompt_api_key():
-    """Write PORCUPINE_API_KEY to .env, prompting the user if not already set."""
+def create_env_template():
+    """Create a minimal .env template for optional future API keys."""
     env_file = BASE / ".env"
-
     if env_file.exists():
-        content = env_file.read_text()
-        existing = [
-            line for line in content.splitlines()
-            if line.startswith("PORCUPINE_API_KEY=") and "your_key_here" not in line and line.split("=", 1)[1].strip()
-        ]
-        if existing:
-            print("✅ PORCUPINE_API_KEY already set in .env.")
-            return
-
-    print("\n🔑 A free Porcupine API key is required for wake word detection.")
-    print("   Get one at: https://console.picovoice.ai/")
-    key = input("   Enter your PORCUPINE_API_KEY: ").strip()
-    if not key:
-        print("⚠️  No key entered — you'll need to add it to .env manually before running.")
-        key = "your_key_here"
-
-    env_file.write_text(f"PORCUPINE_API_KEY={key}\nOPENAI_API_KEY=\n")
-    print("✅ .env written.")
-
-def prompt_wake_word():
-    """Ensure a .ppn wake word file is present in wake_words/."""
-    if DEFAULT_WAKE_WORD_FILE.exists():
-        print(f"✅ Wake word file found: {DEFAULT_WAKE_WORD_FILE.name}")
+        print("✅ .env already exists.")
         return
-
-    # Check if any .ppn is already there
-    existing = list(WAKE_WORDS.glob("*.ppn"))
-    if existing:
-        print(f"✅ Wake word file found: {existing[0].name}")
-        return
-
-    print("\n🎤 Wake word model (.ppn) not found.")
-    print("   Download it from https://console.picovoice.ai/ → Wake Word → 'Hey Tavi' → macOS")
-    path = input("   Path to your .ppn file (or Enter to skip): ").strip()
-
-    if not path:
-        print("⚠️  Skipped. Place a .ppn file in wake_words/ before running.")
-        return
-
-    src = Path(path).expanduser().resolve()
-    if not src.exists():
-        print(f"❌ File not found: {src}")
-        return
-
-    dest = WAKE_WORDS / src.name
-    shutil.copy(src, dest)
-    print(f"✅ Copied to {dest}")
-
-    if dest != DEFAULT_WAKE_WORD_FILE:
-        print(f"ℹ️  Update WAKE_WORD_FILE in config.py to point to '{src.name}'")
+    env_file.write_text("OPENAI_API_KEY=\n")
+    print("✅ .env template created.")
 
 # === Main ===
 
@@ -146,12 +97,15 @@ def main():
         install_portaudio()
 
     install_requirements()
-    prompt_api_key()
+    create_env_template()
     build_whisper_cpp()
     download_file(WHISPER_MODEL_URL, WHISPER_MODEL_FILE)
     download_file(QWEN_MODEL_URL, QWEN_MODEL_FILE)
     download_file(ZIM_URL, ZIM_DEST)
-    prompt_wake_word()
+
+    print("\nℹ️  Wake word: using built-in 'hey_jarvis' model by default.")
+    print("   To use a custom 'Hey Tavi' model, train one with openWakeWord and")
+    print("   place the .onnx file in wake_words/, then pass its path to WakeWordDetector().")
 
     print("\n✅ Setup complete. Run with: python main.py")
 
