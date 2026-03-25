@@ -4,6 +4,9 @@ import argparse
 from pathlib import Path
 import shutil
 import platform
+import sounddevice as sd
+import soundfile as sf
+import numpy as np
 from config import (
     AUDIO_FILE,
     AUDIO_DEVICE_NAME,
@@ -31,10 +34,15 @@ WHISPER_EXEC = str(WHISPER_PATH / "main")
 
 def record_audio(duration=RECORD_DURATION):
     print("🎤 Listening...")
-    subprocess.run([
-        "arecord", "-D", AUDIO_DEVICE_NAME, "-f", "cd", "-t", "wav",
-        "-d", str(duration), "-r", "16000", AUDIO_FILE
-    ])
+    if IS_MAC:
+        audio = sd.rec(int(duration * 16000), samplerate=16000, channels=1, dtype="int16")
+        sd.wait()
+        sf.write(str(AUDIO_FILE), audio, 16000)
+    else:
+        subprocess.run([
+            "arecord", "-D", AUDIO_DEVICE_NAME, "-f", "cd", "-t", "wav",
+            "-d", str(duration), "-r", "16000", str(AUDIO_FILE)
+        ])
 
 def play_processing_chime():
     """Play a short chime to indicate the recording phase."""

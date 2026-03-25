@@ -65,7 +65,9 @@ Key constants:
 Uses the `pvporcupine` library. Opens a PyAudio stream at Porcupine's native sample rate, processes 16-bit PCM frames, and blocks until the keyword is detected. The wake word is "Hey Tavi" and requires a `.ppn` model file from the Picovoice Console.
 
 ### `mic_listener.py`
-- Records audio using the `arecord` system command (Linux) to `data/input.wav`
+- Records audio to `data/input.wav`:
+  - macOS: uses `sounddevice` + `soundfile` (cross-platform Python, works on M-series)
+  - Linux/Pi: uses `arecord` (ALSA)
 - Transcribes via the `whisper.cpp` binary using subprocess
 - Supports custom whisper.cpp path via `--whisper-path` CLI arg or `WHISPER_PATH` env var
 
@@ -124,6 +126,12 @@ python main.py
 ```
 
 ---
+
+## Development Strategy
+
+**Current phase:** Develop and test on macOS (M3). Port to Raspberry Pi Zero 2 W once stable.
+
+The `WAKE_WORD_FILE` in `config.py` points to the macOS `.ppn` model. When moving to Pi, update `config.py` to point to the appropriate `.ppn` for arm Linux. All other platform switching is handled automatically via `IS_MAC` / `IS_PI`.
 
 ## Platform Conventions
 
