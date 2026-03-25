@@ -186,7 +186,7 @@ External binaries (not Python packages):
 
 - `followup_prompter.py` is listed in `README.md` but does not exist in the repository
 - `audio_input.py` is an alternative STT implementation using the `openai/whisper` Python library but is not imported by `main.py`
-- LLM integration (`llm_interface.py`) is not wired into `main.py` — the current loop echoes the transcript rather than querying the LLM
+- LLM integration is wired into `main.py` via `build_qwen_prompt` / `query_llm`; responses come from the on-device Qwen 2.5-0.5B model
 - `OPENAI_API_KEY` and web search/Kiwix lookup are not yet implemented
 - Raspberry Pi setup instructions are marked "coming soon"
 - No unit or integration tests exist
