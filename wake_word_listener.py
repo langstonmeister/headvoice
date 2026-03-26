@@ -15,9 +15,9 @@ class WakeWordDetector:
                     until a custom 'Hey Tavi' model is trained.
         """
         if model_path:
-            self.model = Model(wakeword_models=[model_path])
+            self.model = Model(wakeword_models=[model_path], inference_framework="onnx")
         else:
-            self.model = Model(wakeword_models=["hey_jarvis"])
+            self.model = Model(wakeword_models=["hey_jarvis"], inference_framework="onnx")
         self.threshold = threshold
 
     def listen(self):
