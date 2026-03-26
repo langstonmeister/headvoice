@@ -29,7 +29,7 @@ def query_llm(prompt: tuple[str, str], max_tokens: int = DEFAULT_MAX_TOKENS) -> 
     full_prompt = (
         f"<|im_start|>system\n{system_prompt}<|im_end|>\n"
         f"<|im_start|>user\n{user_prompt}<|im_end|>\n"
-        f"<|im_start|>assistant\n"
+        f"<|im_start|>assistant\n<think>\n</think>\n"  # disable thinking mode
     )
 
     try:
