@@ -19,7 +19,8 @@ headvoice/
 ├── wake_word_listener.py   # openWakeWord wake word detection
 ├── mic_listener.py         # Audio recording + whisper.cpp transcription
 ├── voice_output.py         # Text-to-speech output
-├── llm_interface.py        # Local LLM inference via llama-cpp-python
+├── llm_interface.py        # Local LLM inference via llama-cpp-python + Kiwix RAG
+├── kiwix_search.py         # Offline Wikipedia search via libzim
 ├── audio_input.py          # Alternative STT (not used by main.py)
 ├── audio_feedback.py       # Processing chime playback (threaded, with fade)
 ├── setup_env.py            # One-time setup script
@@ -94,6 +95,9 @@ Uses `openwakeword` + `sounddevice`. Processes 1280-sample (~80ms) chunks at 16k
 - Transcribes via `whisper.cpp` binary (auto-detected at `whisper.cpp/build/bin/whisper-cli`)
 - Override binary location with `WHISPER_PATH` env var or `--whisper-path` CLI arg
 
+### `kiwix_search.py`
+Searches the ZIM file in `zim/` using `libzim` and returns a short plain-text excerpt (≤400 chars) from the best-matching article. Called by `llm_interface.py` before every LLM query to provide Wikipedia context. Returns empty string if no ZIM file is present, so the app works without it.
+
 ### `llm_interface.py`
 Uses `llama-cpp-python` to run `models/Qwen3.5-0.8B-Q4_K_M.gguf` in-process.
 - Qwen chat template (`<|im_start|>` / `<|im_end|>` tokens)
@@ -141,6 +145,7 @@ Always gate platform-specific code behind `IS_MAC` or `IS_PI` from `config.py`.
 | `sounddevice` / `soundfile` | Audio recording and wake word stream |
 | `numpy` | Audio buffer handling |
 | `llama-cpp-python` | Local LLM inference (installed via setup_env.py with Metal) |
+| `libzim` | Read ZIM files for offline Wikipedia search |
 | `dimits` | TTS on Linux/Pi |
 | `python-dotenv` | `.env` file loading |
 | `requests`, `beautifulsoup4`, `lxml` | Web utilities (future) |

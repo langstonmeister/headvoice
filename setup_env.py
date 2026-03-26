@@ -16,6 +16,10 @@ WHISPER_DIR = BASE / "whisper.cpp"
 WHISPER_MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin"
 WHISPER_MODEL_FILE = MODELS / "ggml-tiny.en.bin"
 
+# Simple English Wikipedia — no pictures, ~400MB, ideal for voice assistant
+WIKIPEDIA_URL = "https://download.kiwix.org/zim/wikipedia/wikipedia_en_simple_all_nopic_2024-10.zim"
+WIKIPEDIA_FILE = BASE / "zim" / Path(WIKIPEDIA_URL).name
+
 QWEN_MODEL_URL = (
     "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/"
     "Qwen3.5-0.8B-Q4_K_M.gguf"
@@ -27,7 +31,7 @@ IS_MAC = sys.platform == "darwin"
 # === Helpers ===
 
 def ensure_dirs():
-    for path in [MODELS, DATA, WAKE_WORDS]:
+    for path in [MODELS, DATA, WAKE_WORDS, BASE / "zim"]:
         path.mkdir(parents=True, exist_ok=True)
 
 def pip(*args):
@@ -119,6 +123,7 @@ def main():
     build_whisper_cpp()
     download_file(WHISPER_MODEL_URL, WHISPER_MODEL_FILE)
     download_file(QWEN_MODEL_URL, QWEN_MODEL_FILE)
+    download_file(WIKIPEDIA_URL, WIKIPEDIA_FILE)
     create_env_template()
 
     print("\n✅ Setup complete. Run with: python main.py")
