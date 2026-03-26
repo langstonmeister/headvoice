@@ -91,6 +91,21 @@ def _load() -> list[dict]:
     return _entries
 
 
+def load_knowledge_base() -> int:
+    """
+    Eagerly load and index all knowledge files in data/.
+    Call once at startup. Returns the total number of entries loaded.
+    """
+    entries = _load()
+    total = len(entries)
+    if total:
+        print(f"✅ Knowledge base ready: {total} entries total.")
+    else:
+        print("ℹ️  No knowledge files found in data/ — RAG will use Wikipedia only.")
+    return total
+
+
+
 def search_knowledge(query: str) -> str:
     """
     Return the best-matching context string from local knowledge files,

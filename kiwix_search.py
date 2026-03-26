@@ -35,17 +35,18 @@ def search_kiwix(query: str) -> str:
         return ""
 
     try:
-        import libzim
+        from libzim.reader import Archive
+        from libzim.search import Query, Searcher
 
-        archive = libzim.Archive(str(zim_path))
-        searcher = libzim.Searcher(archive)
-        search = searcher.search(libzim.Query().set_query(query))
+        archive = Archive(str(zim_path))
+        searcher = Searcher(archive)
+        search = searcher.search(Query().set_query(query))
         results = list(search.getResults(0, 1))
 
         if not results:
             return ""
 
-        entry = archive.get_entry_by_path(results[0])
+        entry = archive.get_entry_by_path(results[0].path)
         html = bytes(entry.get_item().content).decode("utf-8", errors="ignore")
         text = _extract_text(html)
         return text[:MAX_CONTEXT_CHARS].strip()

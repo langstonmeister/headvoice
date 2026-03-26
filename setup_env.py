@@ -16,7 +16,9 @@ WHISPER_DIR = BASE / "whisper.cpp"
 WHISPER_MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin"
 WHISPER_MODEL_FILE = MODELS / "ggml-tiny.en.bin"
 
-# Simple English Wikipedia — no pictures, ~400MB, ideal for voice assistant
+# Simple English Wikipedia — no pictures, ~400MB, ideal for voice assistant.
+# Find the latest filename at: https://download.kiwix.org/zim/wikipedia/
+# Look for: wikipedia_en_simple_all_nopic_YYYY-MM.zim
 WIKIPEDIA_URL = "https://download.kiwix.org/zim/wikipedia/wikipedia_en_simple_all_nopic_2024-10.zim"
 WIKIPEDIA_FILE = BASE / "zim" / Path(WIKIPEDIA_URL).name
 
@@ -101,6 +103,20 @@ def build_whisper_cpp():
     run(f"make -C '{WHISPER_DIR}' -j4")
     print("✅ whisper.cpp compiled.")
 
+def download_wikipedia():
+    if WIKIPEDIA_FILE.exists():
+        print(f"✅ {WIKIPEDIA_FILE.name} already downloaded.")
+        return
+    print(f"⬇️  Downloading Wikipedia ZIM ({WIKIPEDIA_FILE.name})...")
+    print("   This is ~400MB and may take a while. Skip with Ctrl+C if you prefer to add it later.")
+    try:
+        run(f"curl -L '{WIKIPEDIA_URL}' -o '{WIKIPEDIA_FILE}'")
+    except subprocess.CalledProcessError:
+        print("⚠️  Wikipedia download failed or was skipped. You can download it later.")
+        print(f"   URL: {WIKIPEDIA_URL}")
+        print(f"   Place it at: {WIKIPEDIA_FILE}")
+
+
 def create_env_template():
     env_file = BASE / ".env"
     if not env_file.exists():
@@ -123,7 +139,7 @@ def main():
     build_whisper_cpp()
     download_file(WHISPER_MODEL_URL, WHISPER_MODEL_FILE)
     download_file(QWEN_MODEL_URL, QWEN_MODEL_FILE)
-    download_file(WIKIPEDIA_URL, WIKIPEDIA_FILE)
+    download_wikipedia()
     create_env_template()
 
     print("\n✅ Setup complete. Run with: python main.py")
