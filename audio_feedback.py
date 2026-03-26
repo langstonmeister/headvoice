@@ -1,3 +1,4 @@
+import os
 import sounddevice as sd
 import soundfile as sf
 import numpy as np
@@ -21,6 +22,8 @@ def apply_fade(data, fade_duration=0.5, samplerate=16000):
 
 def play_processing_sound(filename="ffharp.wav", fade_duration=0.5, overlap=0.5):
     def _play():
+        if not os.path.exists(filename):
+            return
         data, samplerate = sf.read(filename, dtype='float32')
         data = apply_fade(data, fade_duration, samplerate)
         sd.play(data, samplerate)
