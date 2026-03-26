@@ -81,6 +81,26 @@ def build_whisper_cpp():
     run(f"make -C '{WHISPER_DIR}' -j4")
     print("✅ whisper.cpp compiled.")
 
+def build_llama_cpp():
+    """Clone and compile llama.cpp locally so the binary links against local libs."""
+    llama_dir = BASE / "llama.cpp"
+    binaries = [
+        llama_dir / "build" / "bin" / "llama-cli",
+        llama_dir / "build" / "bin" / "main",
+    ]
+    if any(b.exists() for b in binaries):
+        print("✅ llama.cpp already compiled.")
+        return
+
+    if not llama_dir.exists():
+        print("⬇️  Cloning llama.cpp...")
+        run(f"git clone https://github.com/ggml-org/llama.cpp '{llama_dir}'")
+
+    print("🔨 Compiling llama.cpp (Metal-accelerated)...")
+    run(f"cmake -B '{llama_dir}/build' -S '{llama_dir}' -DGGML_METAL=ON")
+    run(f"cmake --build '{llama_dir}/build' --config Release -j4")
+    print("✅ llama.cpp compiled.")
+
 def download_wakeword_models():
     """Download pre-trained openWakeWord models (onnx format)."""
     print("\n⬇️  Downloading openWakeWord models...")
@@ -108,6 +128,7 @@ def main():
         install_portaudio()
 
     install_requirements()
+    build_llama_cpp()
     download_wakeword_models()
     create_env_template()
     build_whisper_cpp()

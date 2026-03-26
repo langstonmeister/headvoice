@@ -3,48 +3,51 @@ import glob
 import subprocess
 import shutil
 from datetime import datetime
-from dimits import Dimits
 from config import IS_MAC
 
-# Initialize Dimits voice once
-tts = Dimits("en_US-amy-low")
-
-# Where to save audio files
+# Where to save audio files (used on Linux/Pi with dimits)
 AUDIO_OUTPUT_DIR = "./audio/responses"
 os.makedirs(AUDIO_OUTPUT_DIR, exist_ok=True)
 
-def _play_audio(filepath: str):
-    if IS_MAC:
-        subprocess.run(["afplay", filepath])
-    else:
-        player = shutil.which("aplay") or shutil.which("play")
-        if player:
-            subprocess.run([player, filepath])
+def _speak_mac(text: str):
+    """Use macOS built-in say command."""
+    subprocess.run(["say", text])
 
-def generate_audio_from_text(text: str, label: str = "llm_response") -> str:
+def _speak_linux(text: str) -> str:
+    """Use dimits/piper TTS, save WAV and play it."""
+    from dimits import Dimits
+    tts = Dimits("en_US-amy-low")
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    stem = f"{label}_{timestamp}"
-
+    stem = f"llm_response_{timestamp}"
     before = set(glob.glob(os.path.join(AUDIO_OUTPUT_DIR, "*")))
 
+    tts.text_2_audio_file(
+        text=text,
+        filename=stem,
+        directory=AUDIO_OUTPUT_DIR,
+        format="wav"
+    )
+
+    after = set(glob.glob(os.path.join(AUDIO_OUTPUT_DIR, "*")))
+    new_files = after - before
+    if not new_files:
+        print("[⚠️] dimits produced no output file")
+        return ""
+
+    filepath = new_files.pop()
+    player = shutil.which("aplay") or shutil.which("play")
+    if player:
+        subprocess.run([player, filepath])
+    return filepath
+
+def generate_audio_from_text(text: str, label: str = "llm_response") -> str:
+    print(f"[🔊] Speaking: '{text}'")
     try:
-        tts.text_2_audio_file(
-            text=text,
-            filename=stem,
-            directory=AUDIO_OUTPUT_DIR,
-            format="wav"
-        )
-
-        after = set(glob.glob(os.path.join(AUDIO_OUTPUT_DIR, "*")))
-        new_files = after - before
-        if not new_files:
-            print("[⚠️] dimits produced no output file")
-            return ""
-
-        filepath = new_files.pop()
-        print(f"[🔊] Speaking: '{text}'")
-        _play_audio(filepath)
-        return filepath
+        if IS_MAC:
+            _speak_mac(text)
+        else:
+            _speak_linux(text)
     except Exception as e:
         print(f"[⚠️] Audio generation failed: {e}")
-        return ""
+    return ""

@@ -1,9 +1,21 @@
 
 import subprocess
-from config import MODEL_DIR
+from pathlib import Path
+from config import MODEL_DIR, BASE_DIR
 from audio_feedback import play_processing_sound
 
-LLAMA_CPP_PATH = "llm/main"  # path to your compiled llama.cpp binary
+def _find_llama_exec() -> str:
+    candidates = [
+        BASE_DIR / "llama.cpp" / "build" / "bin" / "llama-cli",
+        BASE_DIR / "llama.cpp" / "build" / "bin" / "main",
+        BASE_DIR / "llm" / "main",  # legacy committed binary
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    return str(candidates[0])  # will produce a clear missing-file error
+
+LLAMA_CPP_PATH = _find_llama_exec()
 LLM_MODEL_FILE = MODEL_DIR / "qwen2.5-0.5b-q4_k_m.gguf"
 DEFAULT_MAX_TOKENS = 128
 
