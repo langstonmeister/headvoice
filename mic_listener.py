@@ -29,7 +29,7 @@ def _resolve_whisper_path() -> Path:
     return Path(path) if path else DEFAULT_WHISPER_PATH
 
 WHISPER_PATH = _resolve_whisper_path()
-MODEL_PATH = str(WHISPER_PATH / "models" / "ggml-tiny.en.bin")
+MODEL_PATH = str(WHISPER_MODEL)  # from config: models/ggml-tiny.en.bin in project root
 
 def _find_whisper_exec(whisper_path: Path) -> str:
     # whisper.cpp moved the binary in newer builds; check both locations
@@ -79,11 +79,16 @@ def transcribe_audio():
     result = subprocess.run([
         WHISPER_EXEC,
         "-m", MODEL_PATH,
-        "-f", AUDIO_FILE,
+        "-f", str(AUDIO_FILE),
         "-nt"
     ], capture_output=True, text=True)
 
-    return extract_transcription(result.stdout)
+    if result.returncode != 0:
+        print(f"⚠️  Whisper error: {result.stderr.strip()}")
+
+    text = extract_transcription(result.stdout)
+    print(f"📝 Heard: '{text}'")
+    return text
 
 def extract_transcription(output):
     lines = output.splitlines()
