@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from pathlib import Path
+import shutil
 import sys
+from pathlib import Path
 
 # === Paths ===
 BASE = Path(__file__).resolve().parent
@@ -10,93 +11,107 @@ MODELS = BASE / "models"
 DATA = BASE / "data"
 ZIM = BASE / "zim"
 WAKE_WORDS = BASE / "wake_words"
+WHISPER_DIR = BASE / "whisper.cpp"
 
-WHISPER_MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin"
-QWEN_GGUF_URL = "https://huggingface.co/TheBloke/Qwen2_5-0_5B-GGUF/resolve/main/qwen2.5-0.5b.Q4_K_M.gguf"
-
-# Choose your ZIM file here:
-ZIM_URL = "https://download.kiwix.org/zim/devdocs/devdocs_en_ansible_2025-01.zim"
-
-# === Model Downloads ===
 WHISPER_MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin"
 WHISPER_MODEL_FILE = MODELS / "ggml-tiny.en.bin"
 
-# === Add this near the top ===
 QWEN_MODEL_URL = (
     "https://huggingface.co/Dev8709/Qwen2.5-0.5B-Q4_K_M-GGUF/resolve/main/"
     "qwen2.5-0.5b-q4_k_m.gguf"
 )
 QWEN_MODEL_FILE = MODELS / "qwen2.5-0.5b-q4_k_m.gguf"
 
-# Ensure directories exist
-DEST = ZIM / Path(ZIM_URL).name
+ZIM_URL = "https://download.kiwix.org/zim/devdocs/devdocs_en_ansible_2025-01.zim"
+ZIM_DEST = ZIM / Path(ZIM_URL).name
 
-# === Functions ===
+IS_MAC = sys.platform == "darwin"
 
-def ensure_dir(path):
-    path.mkdir(parents=True, exist_ok=True)
+# === Helpers ===
+
+def ensure_dirs():
+    for path in [MODELS, DATA, ZIM, WAKE_WORDS]:
+        path.mkdir(parents=True, exist_ok=True)
 
 def run(cmd):
-    print(f"⚙️  Running: {cmd}")
+    print(f"⚙️  {cmd}")
     subprocess.run(cmd, shell=True, check=True)
 
 def download_file(url, dest):
     if dest.exists():
-        print(f"✅ {dest.name} already exists.")
+        print(f"✅ {dest.name} already exists, skipping download.")
         return
-    print(f"⬇️  Downloading {url}...")
+    print(f"⬇️  Downloading {dest.name}...")
     run(f"curl -L '{url}' -o '{dest}'")
 
-def install_requirements():
-    print("📦 Installing Python packages...")
-    run("pip install -r requirements.txt")
+# === Steps ===
 
-def install_kiwix_tools():
-    if not shutil.which("kiwix-serve"):
-        print("🔧 Installing kiwix-tools...")
-        run("sudo apt install -y kiwix-tools")
+def install_portaudio():
+    """Install portaudio via Homebrew — required for pyaudio on macOS."""
+    if shutil.which("brew") is None:
+        print("❌ Homebrew not found. Install it from https://brew.sh then re-run setup.")
+        sys.exit(1)
+    result = subprocess.run("brew list --formula portaudio", shell=True, capture_output=True)
+    if result.returncode == 0:
+        print("✅ portaudio already installed.")
     else:
-        print("✅ kiwix-tools already installed.")
+        print("🍺 Installing portaudio...")
+        run("brew install portaudio")
 
+def install_requirements():
+    print("\n📦 Installing Python packages...")
+    run(f"{sys.executable} -m pip install -r requirements.txt")
+
+def build_whisper_cpp():
+    """Clone and compile whisper.cpp. On Apple Silicon this builds with Metal support."""
+    binary = WHISPER_DIR / "main"
+    if binary.exists():
+        print("✅ whisper.cpp already compiled.")
+        return
+
+    if not WHISPER_DIR.exists():
+        print("⬇️  Cloning whisper.cpp...")
+        run(f"git clone https://github.com/ggerganov/whisper.cpp '{WHISPER_DIR}'")
+
+    print("🔨 Compiling whisper.cpp...")
+    run(f"make -C '{WHISPER_DIR}' -j4")
+    print("✅ whisper.cpp compiled.")
 
 def create_env_template():
+    """Create a minimal .env template for optional future API keys."""
     env_file = BASE / ".env"
     if env_file.exists():
-        print("✅ .env file already exists.")
-    else:
-        print("📝 Creating .env template...")
-        env_file.write_text("PORCUPINE_API_KEY=your_key_here\nOPENAI_API_KEY=optional_here\n")
-
-
+        print("✅ .env already exists.")
+        return
+    env_file.write_text("OPENAI_API_KEY=\n")
+    print("✅ .env template created.")
 
 # === Main ===
 
 def main():
-    print("🔧 Tavi Setup Starting...\n")
+    print("🔧 Tavi Setup\n")
 
-    for folder in [MODELS, DATA, ZIM, WAKE_WORDS]:
-        ensure_dir(folder)
+    ensure_dirs()
+
+    if IS_MAC:
+        install_portaudio()
 
     install_requirements()
     create_env_template()
-
-    # Download ZIM file
-    download_file(ZIM_URL, DEST)
-   
-    # Download LLM model file
-    download_file(QWEN_MODEL_URL, QWEN_MODEL_FILE)
+    build_whisper_cpp()
     download_file(WHISPER_MODEL_URL, WHISPER_MODEL_FILE)
+    download_file(QWEN_MODEL_URL, QWEN_MODEL_FILE)
+    download_file(ZIM_URL, ZIM_DEST)
 
-    print(f"\n✅ Models downloaded:")
-    print(f"  - Whisper: {WHISPER_MODEL_FILE.name}")
-    print(f"  - Qwen:    {QWEN_MODEL_FILE.name}")
+    print("\nℹ️  Wake word: using built-in 'hey_jarvis' model by default.")
+    print("   To use a custom 'Hey Tavi' model, train one with openWakeWord and")
+    print("   place the .onnx file in wake_words/, then pass its path to WakeWordDetector().")
 
-    print("\n✅ Tavi setup complete. Don't forget to add your API keys to .env.")
+    print("\n✅ Setup complete. Run with: python main.py")
 
 if __name__ == "__main__":
-    import shutil
     try:
         main()
     except subprocess.CalledProcessError as e:
-        print(f"❌ Setup failed: {e}")
+        print(f"\n❌ Setup failed: {e}")
         sys.exit(1)

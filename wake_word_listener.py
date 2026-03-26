@@ -1,34 +1,36 @@
-from config import WAKE_WORD_FILE, PORCUPINE_API_KEY, RECORD_DURATION, TRANSCRIPTION_LANGUAGE
-import pvporcupine
-import pyaudio
-import struct
-from dotenv import load_dotenv
-import os
+import numpy as np
+import sounddevice as sd
+from openwakeword.model import Model
+
+CHUNK_SIZE = 1280   # ~80ms of audio at 16kHz
+SAMPLE_RATE = 16000
+THRESHOLD = 0.5
+
 
 class WakeWordDetector:
-    def __init__(self, keyword_path):
-        self.porcupine = pvporcupine.create(access_key=os.getenv("PORCUPINE_API_KEY"), keyword_paths=[keyword_path])
-        self.audio = pyaudio.PyAudio()
-        self.stream = self.audio.open(
-            rate=self.porcupine.sample_rate,
-            channels=1,
-            format=pyaudio.paInt16,
-            input=True,
-            frames_per_buffer=self.porcupine.frame_length
-        )
+    def __init__(self, model_path: str = None, threshold: float = THRESHOLD):
+        """
+        model_path: path to a custom openWakeWord .onnx model file, or None to
+                    use the built-in 'hey_jarvis' pre-trained model as a stand-in
+                    until a custom 'Hey Tavi' model is trained.
+        """
+        if model_path:
+            self.model = Model(wakeword_models=[model_path])
+        else:
+            self.model = Model(wakeword_models=["hey_jarvis"])
+        self.threshold = threshold
 
     def listen(self):
-        print("👂 Listening for 'Tavi'...")
-        while True:
-            pcm = self.stream.read(self.porcupine.frame_length, exception_on_overflow=False)
-            pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
-
-            if self.porcupine.process(pcm) >= 0:
-                print("🟢 Wake word 'Tavi' detected!")
-                return
+        print("👂 Listening for wake word...")
+        with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16",
+                            blocksize=CHUNK_SIZE) as stream:
+            while True:
+                audio_data, _ = stream.read(CHUNK_SIZE)
+                prediction = self.model.predict(audio_data.flatten())
+                for score in prediction.values():
+                    if score > self.threshold:
+                        print("🟢 Wake word detected!")
+                        return
 
     def close(self):
-        self.stream.stop_stream()
-        self.stream.close()
-        self.audio.terminate()
-        self.porcupine.delete()
+        pass  # InputStream is managed by the context manager inside listen()
