@@ -13,7 +13,7 @@ def _get_llm() -> Llama:
         print("⏳ Loading LLM...")
         _llm = Llama(
             model_path=str(LLM_MODEL_FILE),
-            n_ctx=512,
+            n_ctx=2048,
             verbose=False,
         )
     return _llm
@@ -39,7 +39,7 @@ def query_llm(prompt: tuple[str, str], max_tokens: int = DEFAULT_MAX_TOKENS) -> 
             max_tokens=max_tokens,
             temperature=0.7,
             repeat_penalty=1.1,
-            stop=["<|im_end|>", "<|im_start|>"],
+            stop=["<|im_end|>", "<|im_start|>", "\n"],
         )
         text = output["choices"][0]["text"].strip()
         return text if text else "I'm not sure how to answer that yet."
