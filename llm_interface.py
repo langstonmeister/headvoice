@@ -28,8 +28,14 @@ def query_llm(prompt: tuple[str, str], max_tokens: int = DEFAULT_MAX_TOKENS) -> 
             "-no-cnv"
         ], capture_output=True, text=True)
 
+        if result.returncode != 0 or not result.stdout.strip():
+            print(f"⚠️  llama.cpp stderr: {result.stderr.strip()}")
+            print(f"⚠️  llama.cpp stdout: {result.stdout.strip()}")
+            return "I'm not sure how to answer that yet."
+
         output = extract_response(result.stdout, user_prompt)
         if not output.strip():
+            print(f"⚠️  Empty response after stripping prompt. Raw output: {result.stdout[:200]}")
             return "I'm not sure how to answer that yet."
         return output
     except Exception as e:

@@ -1,4 +1,5 @@
 import os
+import glob
 import subprocess
 import shutil
 from datetime import datetime
@@ -22,15 +23,25 @@ def _play_audio(filepath: str):
 
 def generate_audio_from_text(text: str, label: str = "llm_response") -> str:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filepath = os.path.join(AUDIO_OUTPUT_DIR, f"{label}_{timestamp}.wav")
+    stem = f"{label}_{timestamp}"
+
+    before = set(glob.glob(os.path.join(AUDIO_OUTPUT_DIR, "*")))
 
     try:
         tts.text_2_audio_file(
             text=text,
-            filename=f"{label}_{timestamp}",
+            filename=stem,
             directory=AUDIO_OUTPUT_DIR,
             format="wav"
         )
+
+        after = set(glob.glob(os.path.join(AUDIO_OUTPUT_DIR, "*")))
+        new_files = after - before
+        if not new_files:
+            print("[⚠️] dimits produced no output file")
+            return ""
+
+        filepath = new_files.pop()
         print(f"[🔊] Speaking: '{text}'")
         _play_audio(filepath)
         return filepath
