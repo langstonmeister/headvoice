@@ -2,6 +2,7 @@ from llama_cpp import Llama
 from config import MODEL_DIR
 from audio_feedback import play_processing_sound
 from kiwix_search import search_kiwix
+from local_knowledge import search_knowledge
 
 LLM_MODEL_FILE = MODEL_DIR / "Qwen3.5-0.8B-Q4_K_M.gguf"
 DEFAULT_MAX_TOKENS = 128
@@ -27,10 +28,17 @@ def query_llm(prompt: tuple[str, str], max_tokens: int = DEFAULT_MAX_TOKENS) -> 
     play_processing_sound()
     user_prompt, system_prompt = prompt
 
-    context = search_kiwix(user_prompt)
-    context_block = f"Reference: {context}\n\n" if context else ""
-    if context:
-        print(f"📚 Kiwix context found ({len(context)} chars)")
+    kb_context = search_knowledge(user_prompt)
+    wiki_context = search_kiwix(user_prompt) if not kb_context else ""
+
+    if kb_context:
+        print(f"📖 Knowledge base match found")
+        context_block = f"Reference: {kb_context}\n\n"
+    elif wiki_context:
+        print(f"📚 Wikipedia context found ({len(wiki_context)} chars)")
+        context_block = f"Reference: {wiki_context}\n\n"
+    else:
+        context_block = ""
 
     full_prompt = (
         f"<|im_start|>system\n{system_prompt}<|im_end|>\n"
