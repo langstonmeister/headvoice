@@ -2,9 +2,11 @@ from wake_word_listener import WakeWordDetector
 from mic_listener import record_audio, transcribe_audio, play_processing_chime
 from voice_output import generate_audio_from_text
 from llm_interface import build_qwen_prompt, query_llm
+from local_knowledge import load_knowledge_base
 
 
 def main():
+    load_knowledge_base()
     detector = WakeWordDetector()
 
     try:
