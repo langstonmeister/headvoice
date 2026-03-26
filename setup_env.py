@@ -77,6 +77,13 @@ def build_whisper_cpp():
     run(f"make -C '{WHISPER_DIR}' -j4")
     print("✅ whisper.cpp compiled.")
 
+def download_wakeword_models():
+    """Download pre-trained openWakeWord models (onnx format)."""
+    print("\n⬇️  Downloading openWakeWord models...")
+    from openwakeword.utils import download_models
+    download_models()
+    print("✅ openWakeWord models downloaded.")
+
 def create_env_template():
     """Create a minimal .env template for optional future API keys."""
     env_file = BASE / ".env"
@@ -97,6 +104,7 @@ def main():
         install_portaudio()
 
     install_requirements()
+    download_wakeword_models()
     create_env_template()
     build_whisper_cpp()
     download_file(WHISPER_MODEL_URL, WHISPER_MODEL_FILE)
