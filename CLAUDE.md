@@ -50,7 +50,7 @@ python main.py
 4. Download openWakeWord pre-trained models
 5. Clone and compile `whisper.cpp`
 6. Download `ggml-tiny.en.bin` (Whisper model)
-7. Download `qwen2.5-0.5b-q4_k_m.gguf` (LLM)
+7. Download `Qwen3.5-0.8B-Q4_K_M.gguf` (LLM)
 
 No accounts, no API keys required.
 
@@ -59,7 +59,7 @@ No accounts, no API keys required.
 ## Voice Loop (`main.py`)
 
 ```
-"Hey Jarvis" → record 6s → whisper.cpp → Qwen 2.5-0.5B → say
+"Hey Jarvis" → record 6s → whisper.cpp → Qwen 3.5-0.8B → say
 ```
 
 1. `WakeWordDetector().listen()` — blocks until wake word detected
@@ -95,7 +95,7 @@ Uses `openwakeword` + `sounddevice`. Processes 1280-sample (~80ms) chunks at 16k
 - Override binary location with `WHISPER_PATH` env var or `--whisper-path` CLI arg
 
 ### `llm_interface.py`
-Uses `llama-cpp-python` to run `models/qwen2.5-0.5b-q4_k_m.gguf` in-process.
+Uses `llama-cpp-python` to run `models/Qwen3.5-0.8B-Q4_K_M.gguf` in-process.
 - Qwen chat template (`<|im_start|>` / `<|im_end|>` tokens)
 - System prompt: "You are Tavi, a friendly voice assistant for musicians."
 - Temperature: 0.7, repeat penalty: 1.1, max tokens: 128

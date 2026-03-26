@@ -2,7 +2,7 @@ from llama_cpp import Llama
 from config import MODEL_DIR
 from audio_feedback import play_processing_sound
 
-LLM_MODEL_FILE = MODEL_DIR / "qwen2.5-0.5b-q4_k_m.gguf"
+LLM_MODEL_FILE = MODEL_DIR / "Qwen3.5-0.8B-Q4_K_M.gguf"
 DEFAULT_MAX_TOKENS = 128
 
 _llm = None

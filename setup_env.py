@@ -17,10 +17,10 @@ WHISPER_MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/g
 WHISPER_MODEL_FILE = MODELS / "ggml-tiny.en.bin"
 
 QWEN_MODEL_URL = (
-    "https://huggingface.co/Dev8709/Qwen2.5-0.5B-Q4_K_M-GGUF/resolve/main/"
-    "qwen2.5-0.5b-q4_k_m.gguf"
+    "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/"
+    "Qwen3.5-0.8B-Q4_K_M.gguf"
 )
-QWEN_MODEL_FILE = MODELS / "qwen2.5-0.5b-q4_k_m.gguf"
+QWEN_MODEL_FILE = MODELS / "Qwen3.5-0.8B-Q4_K_M.gguf"
 
 IS_MAC = sys.platform == "darwin"
 

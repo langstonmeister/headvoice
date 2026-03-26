@@ -6,7 +6,7 @@ Tavi is a modular, offline-first voice assistant built for low-power devices lik
 
 - Wake word detection via [openWakeWord](https://github.com/dscripka/openWakeWord) (open source, no account needed)
 - Offline speech-to-text via [whisper.cpp](https://github.com/ggerganov/whisper.cpp)
-- Local LLM responses via [Qwen 2.5-0.5B](https://huggingface.co/Qwen/Qwen2.5-0.5B) + [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
+- Local LLM responses via [Qwen 3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) + [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
 - Text-to-speech via macOS `say` (Mac) or `dimits`/piper (Linux)
 - Fully offline after initial model downloads
 
