@@ -30,7 +30,20 @@ def _resolve_whisper_path() -> Path:
 
 WHISPER_PATH = _resolve_whisper_path()
 MODEL_PATH = str(WHISPER_PATH / "models" / "ggml-tiny.en.bin")
-WHISPER_EXEC = str(WHISPER_PATH / "main")
+
+def _find_whisper_exec(whisper_path: Path) -> str:
+    # whisper.cpp moved the binary in newer builds; check both locations
+    candidates = [
+        whisper_path / "build" / "bin" / "whisper-cli",
+        whisper_path / "build" / "bin" / "main",
+        whisper_path / "main",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    return str(candidates[0])  # will produce a clear missing-file error
+
+WHISPER_EXEC = _find_whisper_exec(WHISPER_PATH)
 
 def record_audio(duration=RECORD_DURATION):
     print("🎤 Listening...")

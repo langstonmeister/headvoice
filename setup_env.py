@@ -64,8 +64,12 @@ def install_requirements():
 
 def build_whisper_cpp():
     """Clone and compile whisper.cpp. On Apple Silicon this builds with Metal support."""
-    binary = WHISPER_DIR / "main"
-    if binary.exists():
+    binaries = [
+        WHISPER_DIR / "build" / "bin" / "whisper-cli",
+        WHISPER_DIR / "build" / "bin" / "main",
+        WHISPER_DIR / "main",
+    ]
+    if any(b.exists() for b in binaries):
         print("✅ whisper.cpp already compiled.")
         return
 
