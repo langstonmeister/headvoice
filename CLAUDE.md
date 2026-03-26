@@ -2,10 +2,9 @@
 
 ## Project Overview
 
-**Headvoice** (a.k.a. "Tavi") is a modular, offline-first Python voice assistant designed for low-power devices like the Raspberry Pi Zero 2 W. It listens for a wake word, records speech, transcribes it with whisper.cpp, optionally queries a local LLM, and speaks a response via text-to-speech.
+**Headvoice** (a.k.a. "Tavi") is a modular, offline-first Python voice assistant designed for low-power devices like the Raspberry Pi Zero 2 W. It listens for a wake word, records speech, transcribes it with whisper.cpp, queries a local LLM, and speaks a response via text-to-speech.
 
 - Language: Python 3.x
-- ~450 lines of code across 10 modules
 - No web framework, no database, no REST API — pure CLI application
 - MIT License
 
@@ -16,38 +15,66 @@
 ```
 headvoice/
 ├── main.py                 # Entry point: voice loop controller
-├── config.py               # Centralized config, paths, env vars
-├── wake_word_listener.py   # Porcupine wake word detection
+├── config.py               # Centralized config, paths, platform flags
+├── wake_word_listener.py   # openWakeWord wake word detection
 ├── mic_listener.py         # Audio recording + whisper.cpp transcription
-├── voice_output.py         # Text-to-speech output (Dimits)
-├── llm_interface.py        # Local LLM inference via llama.cpp subprocess
-├── audio_input.py          # Alternative STT using openai/whisper Python lib
+├── voice_output.py         # Text-to-speech output
+├── llm_interface.py        # Local LLM inference via llama-cpp-python
+├── audio_input.py          # Alternative STT (not used by main.py)
 ├── audio_feedback.py       # Processing chime playback (threaded, with fade)
-├── setup_env.py            # One-time setup script (downloads models, installs deps)
+├── setup_env.py            # One-time setup script
 ├── setup.py                # Python package configuration
 ├── requirements.txt        # Python dependencies
-├── models/                 # ML model binaries (ggml-tiny.en.bin, *.gguf)
-├── wake_words/             # Porcupine .ppn wake word model files
-├── data/                   # Temporary WAV files (input.wav, processing.wav)
-├── llm/                    # llama.cpp binary (llm/main)
-├── zim/                    # Kiwix ZIM files for offline documentation
+├── models/                 # ML model binaries (downloaded by setup_env.py)
+├── wake_words/             # Custom openWakeWord .onnx model files
+├── data/                   # Temporary WAV files (input.wav)
+├── whisper.cpp/            # Cloned + compiled by setup_env.py (gitignored)
 └── README.md
 ```
 
 ---
 
+## Setup
+
+```bash
+git clone https://github.com/langstonmeister/headvoice
+cd headvoice
+python setup_env.py
+python main.py
+```
+
+`setup_env.py` handles everything in one shot:
+1. `brew install portaudio` (macOS only)
+2. `pip install -r requirements.txt`
+3. `pip install llama-cpp-python` (with Metal on macOS)
+4. Download openWakeWord pre-trained models
+5. Clone and compile `whisper.cpp`
+6. Download `ggml-tiny.en.bin` (Whisper model)
+7. Download `qwen2.5-0.5b-q4_k_m.gguf` (LLM)
+
+No accounts, no API keys required.
+
+---
+
+## Voice Loop (`main.py`)
+
+```
+"Hey Jarvis" → record 6s → whisper.cpp → Qwen 2.5-0.5B → say
+```
+
+1. `WakeWordDetector().listen()` — blocks until wake word detected
+2. `play_processing_chime()` — audio feedback (skipped if no chime file)
+3. `record_audio(duration=6)` — saves to `data/input.wav`
+4. `transcribe_audio()` — calls whisper.cpp binary, returns text
+5. `query_llm(build_qwen_prompt(text))` — runs Qwen via llama-cpp-python
+6. `generate_audio_from_text(reply)` — speaks via `say` (macOS) or dimits (Linux)
+
+---
+
 ## Key Modules
 
-### `main.py`
-The voice loop. Instantiates `WakeWordDetector`, then loops:
-1. `detector.listen()` — blocks until "Hey Tavi" is detected
-2. `play_processing_chime()` — audio feedback
-3. `record_audio(duration=6)` — records 6 seconds to `data/input.wav`
-4. `transcribe_audio()` — calls whisper.cpp, returns text
-5. `generate_audio_from_text(...)` — speaks the response
-
 ### `config.py`
-Single source of truth for all paths and settings. Import constants from here rather than hardcoding paths.
+Single source of truth for paths and platform flags. Always import from here.
 
 Key constants:
 - `BASE_DIR`, `DATA_DIR`, `MODEL_DIR`, `WAKE_WORD_DIR`
@@ -58,86 +85,38 @@ Key constants:
 - `IS_MAC`, `IS_PI` — platform booleans
 - `AUDIO_DEVICE_NAME` — platform-appropriate audio device
 
-No required API keys — the app runs fully offline with no accounts needed.
-
 ### `wake_word_listener.py`
-Uses `openwakeword` with a `sounddevice` input stream. Processes 1280-sample (~80ms) chunks of 16kHz PCM audio and returns when any model score exceeds the threshold (default 0.5). By default uses the built-in `hey_jarvis` pre-trained model. Pass a path to a custom `.onnx` model file to `WakeWordDetector(model_path=...)` to use a trained "Hey Tavi" model instead. No API key required.
+Uses `openwakeword` + `sounddevice`. Processes 1280-sample (~80ms) chunks at 16kHz. Returns when any model score exceeds threshold (default 0.5). Defaults to built-in `hey_jarvis` model. Pass `model_path=` for a custom `.onnx` file.
 
 ### `mic_listener.py`
-- Records audio to `data/input.wav`:
-  - macOS: uses `sounddevice` + `soundfile` (cross-platform Python, works on M-series)
-  - Linux/Pi: uses `arecord` (ALSA)
-- Transcribes via the `whisper.cpp` binary using subprocess
-- Supports custom whisper.cpp path via `--whisper-path` CLI arg or `WHISPER_PATH` env var
-
-### `voice_output.py`
-Uses the `dimits` TTS library with the `en_US-amy-low` model. Saves timestamped WAV files to `./audio/responses/`. Returns the file path or empty string on failure.
+- macOS: records via `sounddevice` + `soundfile`
+- Linux/Pi: records via `arecord` (ALSA)
+- Transcribes via `whisper.cpp` binary (auto-detected at `whisper.cpp/build/bin/whisper-cli`)
+- Override binary location with `WHISPER_PATH` env var or `--whisper-path` CLI arg
 
 ### `llm_interface.py`
-Runs `llm/main` (llama.cpp binary) as a subprocess with the Qwen 2.5-0.5B GGUF model.
+Uses `llama-cpp-python` to run `models/qwen2.5-0.5b-q4_k_m.gguf` in-process.
+- Qwen chat template (`<|im_start|>` / `<|im_end|>` tokens)
 - System prompt: "You are Tavi, a friendly voice assistant for musicians."
-- Temperature: 0.7, repeat penalty: 1.1
-- Max tokens: 128 (tunable)
-- `-no-cnv` flag disables conversation mode
-- `build_qwen_prompt(user_input)` → returns `(user_prompt, system_prompt)` tuple
+- Temperature: 0.7, repeat penalty: 1.1, max tokens: 128
+- Model loaded once on first query and reused
+
+### `voice_output.py`
+- macOS: uses built-in `say` command (no setup needed)
+- Linux/Pi: uses `dimits` (piper TTS), saves WAV to `audio/responses/` and plays with `aplay`
 
 ### `audio_feedback.py`
-Plays a processing chime in a background thread with fade-in/fade-out over 0.5s using `soundfile` and `sounddevice`.
-
-### `setup_env.py`
-One-time setup. Downloads models from HuggingFace, creates `.env` template, installs system packages. Run once before first use.
+Plays a chime file in a background thread with fade in/out. Skips silently if the file doesn't exist.
 
 ---
-
-## Environment Setup
-
-### Required Environment Variables
-
-Create a `.env` file at the project root (or run `python setup_env.py` to generate a template):
-
-```
-PORCUPINE_API_KEY=your_key_here   # Required — get from console.picovoice.ai
-OPENAI_API_KEY=                   # Optional — future web fallback
-```
-
-`WHISPER_PATH` can optionally be set in the environment or passed as `--whisper-path` to override the whisper.cpp binary location.
-
-### Installation
-
-```bash
-# Clone and run setup (handles brew deps, whisper.cpp build, model downloads)
-python setup_env.py
-```
-
-`setup_env.py` will:
-- Install `portaudio` via Homebrew (macOS)
-- Install all Python packages
-- Clone and compile `whisper.cpp` with Metal support
-- Download the Whisper model, Qwen GGUF model, and ZIM file
-
-### Running
-
-```bash
-python main.py
-```
-
----
-
-## Development Strategy
-
-**Current phase:** Develop and test on macOS (M3). Port to Raspberry Pi Zero 2 W once stable.
-
-Wake word detection uses `openwakeword` with the built-in `hey_jarvis` model by default — no platform-specific model files needed. To switch to a custom "Hey Tavi" model, train one with openWakeWord, place the `.onnx` file in `wake_words/`, and pass its path to `WakeWordDetector(model_path=...)`. All other platform switching is handled automatically via `IS_MAC` / `IS_PI`.
 
 ## Platform Conventions
 
-The project targets three platforms with conditional behavior in `config.py`:
-
-| Platform | `IS_MAC` | `IS_PI` | Audio device | TTS |
+| Platform | `IS_MAC` | `IS_PI` | Recording | TTS |
 |---|---|---|---|---|
-| macOS | `True` | `False` | `"default"` | Dimits / `say` |
-| Raspberry Pi (arm Linux) | `False` | `True` | `"plughw:1"` | `espeak-ng` |
-| Other Linux | `False` | `False` | `"default"` | `espeak-ng` |
+| macOS | `True` | `False` | `sounddevice` | `say` |
+| Raspberry Pi | `False` | `True` | `arecord` (`plughw:1`) | `dimits` |
+| Other Linux | `False` | `False` | `arecord` (`default`) | `dimits` |
 
 Always gate platform-specific code behind `IS_MAC` or `IS_PI` from `config.py`.
 
@@ -145,51 +124,46 @@ Always gate platform-specific code behind `IS_MAC` or `IS_PI` from `config.py`.
 
 ## Development Conventions
 
-- **Paths**: Always import from `config.py` (`BASE_DIR`, `DATA_DIR`, etc.) rather than constructing paths inline.
-- **Subprocess calls**: External binaries (whisper.cpp, llama.cpp, arecord) are invoked via `subprocess.run`. Avoid shell=True; pass argument lists.
-- **No test suite**: There are currently no automated tests. Manual testing is done by running `main.py` directly.
-- **No CI/CD**: No pipeline configuration exists.
-- **Audio files**: `*.wav` files are gitignored. The `data/` directory is tracked but its contents are not.
-- **Model files**: `*.bin`, `*.gguf`, `*.ppn` binaries are gitignored. The `models/` and `wake_words/` directories are tracked but contents are not.
-- **No database**: All state is ephemeral. No persistent storage beyond the model files.
+- **Paths**: import from `config.py`, never hardcode
+- **Subprocess**: pass argument lists, avoid `shell=True`
+- **No test suite**: manual testing via `python main.py`
+- **No CI/CD**: no pipeline configuration
+- **Gitignored**: `*.wav`, `*.bin`, `models/*`, `whisper.cpp/`, `llama.cpp/`, `llm/`
+- **Custom wake word models**: place `.onnx` files in `wake_words/` (tracked by git)
 
 ---
 
 ## Dependencies
 
-Key packages from `requirements.txt`:
-
 | Package | Purpose |
 |---|---|
-| `openwakeword` | Wake word detection (open source, no API key) |
+| `openwakeword` | Wake word detection (no API key) |
 | `sounddevice` / `soundfile` | Audio recording and wake word stream |
 | `numpy` | Audio buffer handling |
-| `dimits` | Text-to-speech synthesis |
+| `llama-cpp-python` | Local LLM inference (installed via setup_env.py with Metal) |
+| `dimits` | TTS on Linux/Pi |
 | `python-dotenv` | `.env` file loading |
-| `openai` | Optional OpenAI API fallback (future) |
-| `requests`, `beautifulsoup4`, `lxml` | Web/HTML utilities (future) |
+| `requests`, `beautifulsoup4`, `lxml` | Web utilities (future) |
+| `openai` | API fallback (future) |
 
-External binaries (not Python packages):
-- `whisper.cpp` — compiled separately, path set via `WHISPER_PATH`
-- `llama.cpp` — binary stored at `llm/main`
-- `arecord` (Linux), `afplay` (macOS) — system audio tools
+External binary:
+- `whisper.cpp` — cloned and compiled by `setup_env.py` into `whisper.cpp/`
 
 ---
 
 ## Git Workflow
 
-- Default development branch: `master` (remote: `origin`)
-- Feature branches follow the pattern: `<tool>/description-<id>` (e.g. `claude/add-claude-documentation-TiOY5`)
+- Default branch: `main`
+- Feature branches: `<tool>/description-<id>`
 - Commits are GPG-signed via SSH key
-- The `.gitignore` excludes audio artifacts, model binaries, virtual environments, and build artifacts
 
 ---
 
 ## Known Gaps / Future Work
 
-- `followup_prompter.py` is listed in `README.md` but does not exist in the repository
-- `audio_input.py` is an alternative STT implementation using the `openai/whisper` Python library but is not imported by `main.py`
-- LLM integration is wired into `main.py` via `build_qwen_prompt` / `query_llm`; responses come from the on-device Qwen 2.5-0.5B model
-- `OPENAI_API_KEY` and web search/Kiwix lookup are not yet implemented
-- Raspberry Pi setup instructions are marked "coming soon"
-- No unit or integration tests exist
+- Wake word is `hey_jarvis` placeholder — train a custom "Hey Tavi" openWakeWord model
+- `followup_prompter.py` referenced in README but not yet implemented
+- `audio_input.py` is an alternative STT path (openai/whisper Python lib) not used by `main.py`
+- Kiwix/offline knowledge base lookup not yet implemented
+- Raspberry Pi setup not yet documented or tested
+- No unit or integration tests

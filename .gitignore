@@ -5,6 +5,11 @@ __pycache__/
 *.wav
 *.bin
 
+# Cloned and compiled by setup_env.py — not committed
+whisper.cpp/
+llama.cpp/
+llm/
+
 # Keep directories but ignore their contents by default
 data/*
 !data/README.md
