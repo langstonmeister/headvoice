@@ -1,3 +1,5 @@
+# Note: llama-cpp-python must be installed via setup_env.py for Metal support on macOS
+# CMAKE_ARGS="-DGGML_METAL=ON" pip install llama-cpp-python
 sounddevice          # Audio recording and wake word stream
 soundfile            # Audio file I/O
 numpy                # Audio buffer handling
